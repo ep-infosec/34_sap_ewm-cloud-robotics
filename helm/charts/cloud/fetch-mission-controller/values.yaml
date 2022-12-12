@@ -1,0 +1,14 @@
+image: "ghcr.io/sap/ewm-cloud-robotics/fetch-mission-controller:latest"
+
+tenant_main_namespace: "default"
+tenant: ""
+
+envs:
+  clientsecret: ""
+  password: ""
+  user: ""
+  host: ""
+  clientid: ""
+  log:
+    level: "info"
+    format: "json"

@@ -1,0 +1,288 @@
+##
+## Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+##
+## This file is part of ewm-cloud-robotics
+## (see https://github.com/SAP/ewm-cloud-robotics).
+##
+## This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
+##
+
+apiVersion: skaffold/v2beta28
+kind: Config
+
+## Default profile:
+## Use local Docker daemon & registry to build and test all images, then exit without deployment
+## to verify that builds and tests are OK. 
+build:
+  tagPolicy:
+    customTemplate:
+      template: "v{{.date}}-{{.gitSHA}}"
+      components:
+      - name: date
+        dateTime:
+          format: "20060102"
+          timezone: "UTC"
+      - name: gitSHA
+        gitCommit:
+          variant: AbbrevCommitSha
+  artifacts:
+    - image: ewm-sim
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: ewm-sim
+    - image: dummy-mission-controller
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: dummy-mission-controller
+    - image: fetch-mission-controller
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: fetch-mission-controller
+    - image: mir-mission-controller
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: mir-mission-controller
+    - image: order-manager
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: order-manager
+    - image: robot-controller
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: robot-controller
+    - image: robot-configurator
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: robot-configurator
+    - image: monitoring-ui
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: monitoring-ui
+    - image: order-auctioneer
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: order-auctioneer
+    - image: order-bid-agent
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: order-bid-agent
+    - image: mir-travel-time-calculator
+      context: .
+      docker:
+        dockerfile: Dockerfile
+        target: mir-travel-time-calculator
+  local: 
+    push: false
+test:
+  - image: ewm-sim
+    structureTests:
+      - tests/container-structure-tests/ewm-sim.yaml
+  - image: dummy-mission-controller
+    structureTests:
+      - tests/container-structure-tests/dummy-mission-controller.yaml
+  - image: mir-mission-controller
+    structureTests:
+      - tests/container-structure-tests/mir-mission-controller.yaml
+  - image: fetch-mission-controller
+    structureTests:
+      - tests/container-structure-tests/fetch-mission-controller.yaml
+  - image: order-manager
+    structureTests:
+      - tests/container-structure-tests/order-manager.yaml
+  - image: robot-controller
+    structureTests:
+      - tests/container-structure-tests/robot-controller.yaml
+  - image: robot-configurator
+    structureTests:
+      - tests/container-structure-tests/robot-configurator.yaml
+  - image: monitoring-ui
+    structureTests:
+      - tests/container-structure-tests/monitoring-ui.yaml
+  - image: order-auctioneer
+    structureTests:
+      - tests/container-structure-tests/order-auctioneer.yaml
+  - image: order-bid-agent
+    structureTests:
+      - tests/container-structure-tests/order-bid-agent.yaml
+  - image: mir-travel-time-calculator
+    structureTests:
+      - tests/container-structure-tests/mir-travel-time-calculator.yaml
+
+#########################################################################################
+
+profiles:
+  - name: push-all
+    build:
+      local:
+        push: true
+  - name: push-all-latest
+    build:
+      local:
+        push: true
+      tagPolicy:
+        sha256: {}
+
+  ## Profiles to build and push application specific images via deploy.sh to
+  ## custom container registry
+  ##
+  ## ewm-order-manager
+  - name: ewm-order-manager
+    build:
+      artifacts:
+        - image: order-manager
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: order-manager
+      local:
+        push: true
+    test:
+      - image: order-manager
+        structureTests:
+          - tests/container-structure-tests/order-manager.yaml
+  ## ewm-robot-controller
+  - name: ewm-robot-controller
+    build:
+      artifacts:
+        - image: robot-controller
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: robot-controller
+        - image: robot-configurator
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: robot-configurator
+      local:
+        push: true
+    test:
+      - image: robot-controller
+        structureTests:
+          - tests/container-structure-tests/robot-controller.yaml
+      - image: robot-configurator
+        structureTests:
+          - tests/container-structure-tests/robot-configurator.yaml
+    ## ewm-monitoring-ui
+  - name: ewm-monitoring-ui
+    build:
+      artifacts:
+        - image: monitoring-ui
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: monitoring-ui
+      local:
+        push: true
+    test:
+      - image: monitoring-ui
+        structureTests:
+          - tests/container-structure-tests/monitoring-ui.yaml
+    ## ewm-order-auction
+  - name: ewm-order-auction
+    build:
+      artifacts:
+        - image: order-auctioneer
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: order-auctioneer
+        - image: order-bid-agent
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: order-bid-agent
+      local:
+        push: true
+    test:
+      - image: order-auctioneer
+        structureTests:
+          - tests/container-structure-tests/order-auctioneer.yaml
+      - image: order-bid-agent
+        structureTests:
+          - tests/container-structure-tests/order-bid-agent.yaml
+  ## ewm-sim        
+  - name: ewm-sim
+    build:
+      artifacts:
+        - image: ewm-sim
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: ewm-sim
+      local:
+        push: true
+    test:
+      - image: ewm-sim
+        structureTests:
+          - tests/container-structure-tests/ewm-sim.yaml
+  ## mir-mission-controller
+  - name: mir-mission-controller
+    build:
+      artifacts:
+        - image: mir-mission-controller
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: mir-mission-controller 
+      local:
+        push: true
+    test:
+      - image: mir-mission-controller
+        structureTests:
+          - tests/container-structure-tests/mir-mission-controller.yaml
+  ## mir-travel-time-calculator
+  - name: mir-travel-time-calculator
+    build:
+      artifacts:
+        - image: mir-travel-time-calculator
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: mir-travel-time-calculator
+      local:
+        push: true
+    test:
+      - image: mir-travel-time-calculator
+        structureTests:
+          - tests/container-structure-tests/mir-travel-time-calculator.yaml
+  ## dummy-mission-controller
+  - name: dummy-mission-controller
+    build:
+      artifacts:
+        - image: dummy-mission-controller
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: dummy-mission-controller
+      local:
+        push: true
+    test:
+      - image: dummy-mission-controller
+        structureTests:
+          - tests/container-structure-tests/dummy-mission-controller.yaml
+  ## fetch-mission-controller
+  - name: fetch-mission-controller
+    build:
+      artifacts:
+        - image: fetch-mission-controller
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: fetch-mission-controller
+      local:
+        push: true
+    test:
+      - image: fetch-mission-controller
+        structureTests:
+          - tests/container-structure-tests/fetch-mission-controller.yaml

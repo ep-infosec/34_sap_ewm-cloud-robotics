@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: order-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sap-ewm:order-manager{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sap-ewm:order-manager
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: order-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sap-ewm:order-manager:read-crds{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sap-ewm:read-crds
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: order-manager
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ewm-odata-api
+type: Opaque
+## Usage of 'stringData' field rather than 'data' to leverage automatic base64 en-/decoding 
+## (ref. https://kubernetes.io/docs/concepts/configuration/secret/#creating-a-secret-manually)
+stringData:
+  ewmhost: "{{ .Values.envs.ewmhost }}"
+  ewmauth: "{{ .Values.envs.ewmauth }}"
+  ewmuser: "{{ .Values.envs.ewmuser }}"
+  ewmpswd: "{{ .Values.envs.ewmpassword }}"
+  ewmpath: "{{ .Values.envs.ewmbasepath }}"
+  ewmclid: "{{ .Values.envs.ewmclientid }}"
+  ewmclse: "{{ .Values.envs.ewmclientsecret }}"
+  ewmtkep: "{{ .Values.envs.ewmtokenendpoint }}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-manager
+  template:
+    metadata:
+      labels:
+        app: order-manager
+    spec:
+      serviceAccountName: order-manager
+      containers:
+      - image: {{ .Values.image }}
+        name: order-manager
+        env:
+        - name: EWM_USER
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmuser
+        - name: EWM_HOST
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmhost
+        - name: EWM_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmpswd
+        - name: EWM_AUTH
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmauth
+        - name: EWM_BASEPATH
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmpath
+        - name: EWM_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmclid
+        - name: EWM_CLIENTSECRET
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmclse
+        - name: EWM_TOKENENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmtkep
+        - name: RESERVATION_TIMEOUT
+          value: "{{ .Values.envs.reservationtimeout }}"
+        - name: LOG_LEVEL
+          value: {{ .Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ .Values.envs.log.format }}
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "1200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-manager
+  labels:
+    app: order-manager
+spec:
+  ports:
+  - name: metrics
+    port: 8000
+    appProtocol: http
+  selector:
+    app: order-manager
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: order-manager
+  labels:
+    prometheus: {{ if .Values.tenant }}{{ .Values.tenant }}-{{ end }}kube-prometheus 
+spec:
+  endpoints:
+  - port: metrics
+{{ if eq .Values.use_istio "true" }}
+    scheme: https
+    tlsConfig:
+      caFile: /etc/istio-certs/root-cert.pem
+      certFile: /etc/istio-certs/cert-chain.pem
+      insecureSkipVerify: true
+      keyFile: /etc/istio-certs/key.pem
+{{ end }}
+  selector:
+    matchLabels:
+      app: order-manager

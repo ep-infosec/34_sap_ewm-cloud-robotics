@@ -1,0 +1,95 @@
+# Simulated EWM OData API server that produces a never ending stream of warehouse orders/tasks
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ewm-sim
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: ewm-sim
+  template:
+    metadata:
+      labels:
+        app: ewm-sim
+    spec:
+      containers:
+      - name: ewm-sim
+        image: {{ .Values.image }}
+        ports:
+        - containerPort: 8080
+          name: odata-api
+        env:
+        - name: ODATA_USER
+          value: {{ quote .Values.envs.ewm.user }} 
+        - name: ODATA_PASSWD
+          value: {{ quote .Values.envs.ewm.password }} 
+        - name: GEN_INT
+          value: {{ quote .Values.envs.ewm.geninterval }}
+        - name: LOGGING_LOGLEVEL
+          value: {{ quote .Values.envs.log.level }}
+        - name: LOGGING_LOGOUTPUT
+          value: {{ quote .Values.envs.log.output }}
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 1
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 1
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 10
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "4Gi"
+            cpu: "950m"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: ewm-sim
+  labels:
+    app: ewm-sim
+spec:
+  selector:
+    app: ewm-sim
+  ports:
+  - protocol: TCP
+    name: http
+    port: 8080
+    targetPort: odata-api
+  type: ClusterIP
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: ewm-sim
+spec:
+  hosts:
+  - ewm-odata.{{ .Values.tenant_domain }}
+  gateways:
+  - {{ .Values.tenant_main_namespace }}/tenant-gateway
+  http:
+  - name: ewm-sim
+    match:
+    - uri:
+        prefix: /odata/SAP/ZEWM_ROBCO_SRV
+    route:
+    - destination:
+        port:
+          number: 8080
+        host: ewm-sim

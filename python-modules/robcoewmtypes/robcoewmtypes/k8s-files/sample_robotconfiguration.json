@@ -1,0 +1,24 @@
+{
+    "apiVersion": "ewm.sap.com/v1alpha1",
+    "kind": "RobotConfiguration",
+    "metadata": {
+        "labels": {
+            "cloudrobotics.com/robot-name": ""
+        },
+        "name": "",
+        "namespace": "default"
+    },
+    "spec": {
+        "batteryIdle": 0,
+        "batteryMin": 0,
+        "batteryOk": 0,
+        "lgnum": "",
+        "rsrcgrp": "",
+        "rsrctype": "",
+        "maxIdleTime": 0,
+        "chargers": [ "" ],
+        "recoverFromRobotError": false,
+        "mode": "STOP"
+    },
+    "status": {}
+}

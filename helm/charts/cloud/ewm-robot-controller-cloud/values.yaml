@@ -1,0 +1,13 @@
+image: "ghcr.io/sap/ewm-cloud-robotics/robot-controller:latest"
+
+tenant_main_namespace: "default"
+tenant: ""
+
+robots:
+  - name: "z"
+
+envs:
+  maxretrycount: 1
+  log:
+    level: "info"
+    format: "json"

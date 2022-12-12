@@ -1,0 +1,10 @@
+project: example-project
+
+robotMetadata:
+  type: "dummy-robot"
+  ewmRobotController: "disabled"
+  ewmRobotControllerCloud: "enabled"
+  make: "dummy-make"
+  model: "dummy-model"
+
+numberdummyrobots: 3

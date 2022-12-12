@@ -1,0 +1,29 @@
+domain: "domain.local"
+tenant_domain: "domain.local"
+
+image: "ghcr.io/sap/ewm-cloud-robotics/monitoring-ui:latest"
+
+images:
+  app_auth_proxy: "app-auth-proxy:latest"
+
+tenant: ""
+tenant_main_namespace: "default"
+
+sap_btp_service_operator: "false"
+use_istio: "false"
+
+urlpath: "/ewm-monitoring-ui"
+
+envs:
+  ewmuser: ""
+  ewmhost: ""
+  ewmauth: "Basic"
+  ewmpassword: ""
+  ewmbasepath: "/odata/SAP/ZEWM_ROBCO_SRV"
+  ewmnewpath: "/ewm-monitoring-ui/ZEWM_ROBCO_SRV"
+  ewmclientid: ""
+  ewmclientsecret: ""
+  ewmtokenendpoint: ""
+  log: 
+    format: "json"
+    level: "info"

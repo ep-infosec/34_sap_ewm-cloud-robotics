@@ -1,0 +1,31 @@
+{
+  "apiVersion": "ewm.sap.com/v1alpha1",
+  "kind": "WarehouseOrder",
+  "metadata": {
+    "name": "",
+    "namespace": "default",
+    "labels": {
+      "cloudrobotics.com/robot-name": ""
+    }
+  },
+  "spec": {
+    "data": {
+      "lgnum": "",
+      "who": "",
+      "status": "",
+      "areawho": "",
+      "lgtyp": "",
+      "lgpla": "",
+      "queue": "",
+      "rsrc": "",
+      "lsd": 0,
+      "topwhoid": "",
+      "refwhoid": "",
+      "flgwho": false,
+      "flgto": false,
+      "warehousetasks" : []},
+    "process_status": [],
+    "order_status": "RUNNING" 
+  },
+  "status": {}
+}

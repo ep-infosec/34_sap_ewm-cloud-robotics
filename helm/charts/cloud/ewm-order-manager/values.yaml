@@ -1,0 +1,18 @@
+image: "ghcr.io/sap/ewm-cloud-robotics/order-manager:latest"
+
+tenant_main_namespace: "default"
+tenant: ""
+
+envs:
+  ewmuser: ""
+  ewmhost: ""
+  ewmauth: "Basic"
+  ewmpassword: ""
+  ewmbasepath: "/odata/SAP/ZEWM_ROBCO_SRV"
+  ewmclientid: ""
+  ewmclientsecret: ""
+  ewmtokenendpoint: ""
+  reservationtimeout: 5.0
+  log:
+    level: "info"
+    format: "json"

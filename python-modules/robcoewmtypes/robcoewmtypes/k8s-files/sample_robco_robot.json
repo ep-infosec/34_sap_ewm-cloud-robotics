@@ -1,0 +1,16 @@
+{
+    "apiVersion": "registry.cloudrobotics.com/v1alpha1",
+    "kind": "Robot",
+    "metadata": {
+        "labels": {
+            "cloudrobotics.com/robot-name": ""
+        },
+        "name": "",
+        "namespace": "default"
+    },
+    "spec": {
+        "project": "",
+        "type": ""
+    },
+    "status": {}
+}

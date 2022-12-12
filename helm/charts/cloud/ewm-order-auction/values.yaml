@@ -1,0 +1,16 @@
+image: "ghcr.io/sap/ewm-cloud-robotics/order-auctioneer:latest"
+
+tenant_main_namespace: "default"
+tenant: ""
+
+robots: []
+
+envs:
+  log: 
+    format: "json"
+    level: "info"
+
+# Certificate authority used to sign in-cluster certificates.
+certificate_authority:
+  key: ""
+  crt: ""

@@ -1,0 +1,27 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: ewm-robot-controller
+  namespace: default
+  labels:
+    app: ewm-robot-controller
+spec:
+  appName: ewm-robot-controller-cloud-$APP_VERSION
+  cloud: 
+    values:
+      image: "ghcr.io/sap/ewm-cloud-robotics/robot-controller:latest"
+      envs:
+        maxretrycount: 1 # Maximum number of retries for failed missions
+  ## Select only those robot models that require cloud controllers
+  ## such as Fetch robots. Do not select robots running edge clusters.
+  robots:
+  - selector:
+      matchLabels:
+        model: freight100
+  - selector:
+      matchLabels:
+        model: dummy-model

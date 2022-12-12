@@ -1,0 +1,11 @@
+image: "ghcr.io/sap/ewm-cloud-robotics/dummy-mission-controller:latest"
+
+tenant_main_namespace: "default"
+
+robot:
+  name: "z"
+
+envs:
+  log:
+    level: "info"
+    format: "json"

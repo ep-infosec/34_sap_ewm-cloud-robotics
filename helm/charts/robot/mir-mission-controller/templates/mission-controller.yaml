@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mir-api
+type: Opaque
+## Usage of 'stringData' field rather than 'data' to leverage automatic base64 en-/decoding 
+## (ref. https://kubernetes.io/docs/concepts/configuration/secret/#creating-a-secret-manually)
+stringData:
+  mirhost: "{{ .Values.envs.mirhost }}"
+  miruser: "{{ .Values.envs.miruser }}"
+  mirpswd: "{{ .Values.envs.mirpassword }}"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mir-mission-controller-{{ .Values.robot.name }}
+spec:
+  replicas: 1
+  serviceName: mir-mission-controller-{{ .Values.robot.name }}
+  selector:
+    matchLabels:
+      app: mir-mission-controller-{{ .Values.robot.name }}
+  template:
+    metadata:
+      labels:
+        app: mir-mission-controller-{{ .Values.robot.name }}
+    spec:
+      containers:
+      - name: mir-mission-controller
+        image: {{ .Values.image }}
+        env:
+        - name: MIR_USER
+          valueFrom:
+            secretKeyRef:
+              name: mir-api
+              key: miruser
+        - name: MIR_HOST
+          valueFrom:
+            secretKeyRef:
+              name: mir-api
+              key: mirhost
+        - name: MIR_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mir-api
+              key: mirpswd
+        - name: ROBCO_ROBOT_NAME
+          value: "{{ .Values.robot.name }}"
+        - name: PLC_TROLLEY_ATTACHED
+          value: "{{ .Values.envs.plctrolley }}"
+        - name: LOCALIZATION_FAILED_MAX_RESET
+          value: "{{ .Values.envs.locfailedmaxreset }}"
+        - name: LOG_LEVEL
+          value: {{ .Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ .Values.envs.log.format }}
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "10m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mir-mission-controller-{{ .Values.robot.name }}
+  labels:
+    app: mir-mission-controller-{{ .Values.robot.name }}
+spec:
+  ports:
+  - name: metrics
+    port: 8000
+    appProtocol: http
+  selector:
+    app: mir-mission-controller-{{ .Values.robot.name }}
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mir-mission-controller-{{ .Values.robot.name }}
+  labels:
+    prometheus: {{ if .Values.tenant }}{{ .Values.tenant }}-{{ end }}kube-prometheus 
+spec:
+  endpoints:
+  - port: metrics
+  selector:
+    matchLabels:
+      app: mir-mission-controller-{{ .Values.robot.name }}

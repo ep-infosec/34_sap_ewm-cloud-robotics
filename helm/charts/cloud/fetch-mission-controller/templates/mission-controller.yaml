@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fetch-mission-controller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fetch-mission-controller{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloud-robotics:mission-controller
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: fetch-mission-controller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fetch-mission-controller:read-crds{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sap-ewm:read-crds
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: fetch-mission-controller
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: fetchcore-api
+type: Opaque
+## Usage of 'stringData' field rather than 'data' to leverage automatic base64 en-/decoding 
+## (ref. https://kubernetes.io/docs/concepts/configuration/secret/#creating-a-secret-manually)
+stringData:
+  clientsecret: "{{ .Values.envs.clientsecret }}"
+  password: "{{ .Values.envs.password }}"
+  user: "{{ .Values.envs.user }}"
+  host: "{{ .Values.envs.host }}"
+  clientid: "{{ .Values.envs.clientid }}"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: fetch-mission-controller
+spec:
+  replicas: 1
+  serviceName: fetch-mission-controller
+  selector:
+    matchLabels:
+      app: fetch-mission-controller
+  template:
+    metadata:
+      labels:
+        app: fetch-mission-controller
+    spec:
+      serviceAccountName: fetch-mission-controller
+      containers:
+      - name: fetch-mission-controller
+        image: {{ .Values.image }}
+        env:
+        - name: FETCHCORE_USER
+          valueFrom:
+            secretKeyRef:
+              name: fetchcore-api
+              key: user
+        - name: FETCHCORE_CLIENTSECRET
+          valueFrom:
+            secretKeyRef:
+              name: fetchcore-api
+              key: clientsecret
+        - name: FETCHCORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fetchcore-api
+              key: password
+        - name: FETCHCORE_HOST
+          valueFrom:
+            secretKeyRef:
+              name: fetchcore-api
+              key: host
+        - name: FETCHCORE_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: fetchcore-api
+              key: clientid
+        - name: LOG_LEVEL
+          value: {{ .Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ .Values.envs.log.format }}
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "10m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fetch-mission-controller
+  labels:
+    app: fetch-mission-controller
+spec:
+  ports:
+  - name: metrics
+    port: 8000
+    appProtocol: http
+  selector:
+    app: fetch-mission-controller
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fetch-mission-controller
+  labels:
+    prometheus: {{ if .Values.tenant }}{{ .Values.tenant }}-{{ end }}kube-prometheus 
+spec:
+  endpoints:
+  - port: metrics
+{{ if eq .Values.use_istio "true" }}
+    scheme: https
+    tlsConfig:
+      caFile: /etc/istio-certs/root-cert.pem
+      certFile: /etc/istio-certs/cert-chain.pem
+      insecureSkipVerify: true
+      keyFile: /etc/istio-certs/key.pem
+{{ end }}
+  selector:
+    matchLabels:
+      app: fetch-mission-controller

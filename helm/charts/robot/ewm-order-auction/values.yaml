@@ -1,0 +1,11 @@
+image: "ghcr.io/sap/ewm-cloud-robotics/order-bid-agent:latest"
+
+tenant_main_namespace: "default"
+
+robot:
+  name: "z"
+
+envs:
+  log: 
+    format: "json"
+    level: "info"

@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: robot-controller-{{ .Values.robot.name }}
+spec:
+  replicas: 1
+  serviceName: robot-controller-{{ .Values.robot.name }}
+  selector:
+    matchLabels:
+      app: robot-controller-{{ .Values.robot.name }}
+  template:
+    metadata:
+      labels:
+        app: robot-controller-{{ .Values.robot.name }}
+    spec:
+      containers:
+      - image: {{ .Values.image }}
+        name: robot-controller
+        env:
+        - name: ROBOTS
+          value: "{{ .Values.robot.name }}"
+        - name: MAX_RETRY_COUNT
+          value: "{{ .Values.envs.maxretrycount }}"
+        - name: LOG_LEVEL
+          value: {{ .Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ .Values.envs.log.format }}
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "10m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: robot-controller-{{ .Values.robot.name }}
+  labels:
+    app: robot-controller-{{ .Values.robot.name }}
+spec:
+  ports:
+  - name: metrics
+    port: 8000
+    appProtocol: http
+  selector:
+    app: robot-controller-{{ .Values.robot.name }}
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: robot-controller-{{ .Values.robot.name }}
+  labels:
+    prometheus: {{ if .Values.tenant }}{{ .Values.tenant }}-{{ end }}kube-prometheus 
+spec:
+  endpoints:
+  - port: metrics
+  selector:
+    matchLabels:
+      app: robot-controller-{{ .Values.robot.name }}

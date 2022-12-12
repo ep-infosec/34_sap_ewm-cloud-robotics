@@ -1,0 +1,11 @@
+replicaCount: 1
+image: "ghcr.io/sap/ewm-cloud-robotics/ewm-sim:latest"
+envs:
+  ewm:
+    user: "someuser"
+    password: "supersecure"
+    geninterval: "25000"
+  log:
+    level: "info"
+    output: "CONSOLE"
+

@@ -1,0 +1,13 @@
+{
+  "apiVersion": "mission.cloudrobotics.com/v1alpha1",
+  "kind": "Mission",
+  "metadata": {
+    "labels": {
+      "cloudrobotics.com/robot-name": ""
+    },
+    "name": "",
+    "namespace": "default"
+  },
+  "spec": {},
+  "status": {}
+}

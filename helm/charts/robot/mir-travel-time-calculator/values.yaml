@@ -1,0 +1,18 @@
+image: "ghcr.io/sap/ewm-cloud-robotics/mir-travel-time-calculator"
+
+tenant_main_namespace: "default"
+
+envs:
+  miruser: "admin"
+  mirpassword: ""
+  mirhost: "mir-api.default.svc.cluster.local"
+  mirhttptimeout: "60"
+  mirpreservepathguides: "false"
+  mirfleetconfig: ""
+  precalcpathswhenidle: "true"
+  log: 
+    format: "json"
+    level: "info"
+
+robot:
+  name: "z"

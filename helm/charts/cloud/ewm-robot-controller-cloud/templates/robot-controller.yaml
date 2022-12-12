@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: robot-controller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sap-ewm:robot-controller-cloud{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sap-ewm:robot-controller
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: robot-controller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sap-ewm:robot-controller-cloud:read-crds{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sap-ewm:read-crds
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: robot-controller
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: robot-controller-cloud
+spec:
+  replicas: 1
+  serviceName: robot-controller-cloud
+  selector:
+    matchLabels:
+      app: robot-controller-cloud
+  template:
+    metadata:
+      labels:
+        app: robot-controller-cloud
+    spec:
+      serviceAccountName: robot-controller
+      containers:
+      - image: {{ $.Values.image }}
+        name: robot-controller
+        env:
+        - name: ROBOTS
+          value: "{{- range $.Values.robots }}{{ .name }},{{- end }}"
+        - name: MAX_RETRY_COUNT
+          value: "{{ $.Values.envs.maxretrycount }}"
+        - name: LOG_LEVEL
+          value: {{ $.Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ $.Values.envs.log.format }}
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "768Mi"
+            cpu: "1200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: robot-controller-cloud
+  labels:
+    app: robot-controller-cloud
+spec:
+  ports:
+  - name: metrics
+    port: 8000
+    appProtocol: http
+  selector:
+    app: robot-controller-cloud
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: robot-controller-cloud
+  labels:
+    prometheus: {{ if .Values.tenant }}{{ .Values.tenant }}-{{ end }}kube-prometheus 
+spec:
+  endpoints:
+  - port: metrics
+{{ if eq .Values.use_istio "true" }}
+    scheme: https
+    tlsConfig:
+      caFile: /etc/istio-certs/root-cert.pem
+      certFile: /etc/istio-certs/cert-chain.pem
+      insecureSkipVerify: true
+      keyFile: /etc/istio-certs/key.pem
+{{ end }}
+  selector:
+    matchLabels:
+      app: robot-controller-cloud

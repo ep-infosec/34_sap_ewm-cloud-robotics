@@ -1,0 +1,25 @@
+image: "ghcr.io/sap/ewm-cloud-robotics/robot-configurator:latest"
+
+tenant_main_namespace: "default"
+tenant: ""
+
+envs:
+  ewmuser: ""
+  ewmhost: ""
+  ewmauth: "Basic"
+  ewmpassword: ""
+  ewmbasepath: "/odata/SAP/ZEWM_ROBCO_SRV"
+  ewmclientid: ""
+  ewmclientsecret: ""
+  ewmtokenendpoint: ""
+  ewmlgnum: "1710"
+  chargerlist: "Charger"
+  batterymin: 10
+  batteryok: 80
+  batteryidle: 40
+  ewmrsrctype: "RB01"
+  ewmrsrcgrp: "RB02"
+  maxidletime: 30
+  log:
+    level: "info"
+    format: "json"

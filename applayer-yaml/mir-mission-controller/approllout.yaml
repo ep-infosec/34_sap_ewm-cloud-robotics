@@ -1,0 +1,25 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: mir-mission-controller
+  namespace: default
+  labels:
+    app: mir-mission-controller
+spec:
+  appName: mir-mission-controller-$APP_VERSION
+  robots:
+  - selector:
+      matchLabels:
+        model: mir100
+    values:
+      image: "ghcr.io/sap/ewm-cloud-robotics/mir-mission-controller:latest"
+      envs:
+        plctrolley: 5   # PLC register of robot which is set to 1 when a trolley is attached
+        miruser: ""  # User to connect to MiR API
+        mirpassword: ""   # Password for MiR user
+        mirhost: "mir-api.default.svc.cluster.local"  # Host name of MiR API
+        locfailedmaxreset: 0  # Maximum times E_LOCALIZATION_FAILED errors are resetted per successfull mission

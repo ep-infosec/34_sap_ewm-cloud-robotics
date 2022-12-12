@@ -1,0 +1,39 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: ewm-robot-controller
+  namespace: default
+  labels:
+    app: ewm-robot-controller
+spec:
+  appName: ewm-robot-controller-$APP_VERSION
+  ## Select only robot models with edge clusters, such as
+  ## MiR robots. 
+  robots:
+  - selector:
+      matchLabels:
+        model: mir100
+    values:
+      image: "ghcr.io/sap/ewm-cloud-robotics/robot-controller:latest"
+      envs:
+        maxretrycount: 1 # Maximum number of retries for failed missions
+  cloud:
+    values:
+      image: "ghcr.io/sap/ewm-cloud-robotics/robot-configurator:latest"
+      envs:
+        ewmhost: "" # Host for the OData API endpoint
+        ewmuser: "" # Technical user for all warehouseorder related API calls
+        ewmpassword: "" # Matching password
+        ewmlgnum: "" # Default Warehouse Number in SAP EWM the robot is operating
+        ewmbasepath: "" # Basepath for the OData API matching the service definition
+        ewmrsrctype: "" # Resource type within EWM
+        ewmrsrcgrp: "" # Resource group within EWM
+        chargerlist: "" # Names of chargers available for the robots separated by commas
+        batterymin: 10 # If battery is below this level, a charging mission will be created next
+        batteryok: 80 # Battery level to which a robot will be charged during charging mission
+        batteryidle: 40 # If battery is below this level, a charging mission will be created if robot is idling
+        maxidletime: 30 # Maximum time the robot is waiting for a new warehouse order before it moves to staging

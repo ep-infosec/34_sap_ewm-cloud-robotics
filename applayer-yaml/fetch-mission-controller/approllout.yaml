@@ -1,0 +1,22 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: fetch-mission-controller
+  namespace: default
+  labels:
+    app: fetch-mission-controller
+spec:
+  appName: fetch-mission-controller-$APP_VERSION
+  cloud: 
+    values:
+      image: "ghcr.io/sap/ewm-cloud-robotics/fetch-mission-controller:latest"
+      envs:
+        clientsecret: "" # Client secret of fetch core instance
+        user: "" # User to connect to fetch core
+        password: "" # Password for fetch core user
+        host: "" # Host name of fetch core instance
+        clientid: "" # Client ID of fetch core instance
